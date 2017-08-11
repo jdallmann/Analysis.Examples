@@ -1,7 +1,7 @@
 Data Analysis Examples
 ==========
 
-This repository contains some examples of data analyses that I done to highlight different aspects of modeling.
+This repository contains some examples of data analyses that I have performed  to highlight different aspects of modeling.
 
 ## Mpg and transmission type
 - This analysis looks at the 1974 *Motor Trend* data from the `mtcars` dataset in R's `dataset` package.
