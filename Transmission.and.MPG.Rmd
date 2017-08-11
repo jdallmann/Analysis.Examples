@@ -1,0 +1,304 @@
+---
+title: "Transmission Type and MPG  \nin *Motor Trend* Data"
+author: "Justin Dallmann"
+date: "8/6/2017"
+output: pdf_document
+header-includes:
+- \usepackage{rotating}
+- \usepackage{booktabs}
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+```{r load}
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(xtable)
+data("mtcars")
+```
+
+```{r prelim}
+# Change "cyl" and "am" into factor variables
+mtcars <- mutate(mtcars, 
+                 cyls = factor(mtcars$cyl),
+                 trans =  factor(mtcars$am, labels = c("auto", "manual")),
+                 model = row.names(mtcars)) %>%
+    select(model, mpg:trans, -am)
+```
+
+# Executive summary---a tale of two models
+In this analysis, we examine 1974 *Motor Trend* data to establish whether transmission type has an effect on fuel milage. Due to the sample size and nature of the data, no (reliable) conclusion can be drawn about the relationship of transmission type to mpg. In particular, the natural strategy of using a linear model is difficult to justify (most of the variables are strongly correlated and the residuals of the models that they give rise to have non-normal residuals).
+
+In what follows, I present the model that best meets the constraints of linear regression given the data. The best model takes mpg to be dependant on transmission type (*trans*), quarter mile time in seconds (*q.mile*), and number of carburator barrels (*carb*). This model suggests that a manual transmission is better for mpg. *However*, I also show the effects of weight as a possible confounder diminishing our confidence in the model.
+
+**Given the nature of the data, we cannot be confident that mpg is predicted by transmission type (and, thus, we cannot place much weight on our best model's conclusion that with all of the other variables fixed, switching from automatic transmission to manual yeilds an `8.435` increase in mpg).**
+
+
+# Exploratory work
+In order to examine the relationship between transmission type (trans) and miles per gallon (mpg), I began by looking at the distribution of mpg by manual and auto transmission (see figure 1 in $\S$ Appendix). On first glance, it looks like automatic transmissions have worse mpg ratings.
+
+However, of the cars in the data set, it was largely economy cars that had manual transmissions (which you might reasonably expect to have better mpg ratings). This might reasonably be screened off by several of the correlated variables. 
+
+Setting that aside for the moment, to pick the best extra regressor for a linear model, we examine the correlation between transmission and the other variables. Some of the measurements for the least correlated (in terms of Spearman's rho), and the most highly correlated variables are as follows:
+
+
+```{r correlations, include=TRUE, results="asis"}
+# Spearmans rho correlations
+carbCor <- cor.test(as.numeric(mtcars$trans), mtcars$carb, method = "spearman")
+qsecCor <- cor.test(as.numeric(mtcars$trans), mtcars$qsec, method = "spearman")
+wtCor <- cor.test(as.numeric(mtcars$trans), mtcars$wt, method = "spearman")
+hpCor <- cor.test(as.numeric(mtcars$trans), mtcars$hp, method = "spearman")
+dispCor <- cor.test(mtcars$disp, as.numeric(mtcars$trans), method = "spearman")
+
+# Make correlation data frame to print
+cors <- data.frame(
+    c(carbCor$estimate, qsecCor$estimate, hpCor$estimate, dispCor$estimate, wtCor$estimate),
+    c(carbCor$p.value, qsecCor$p.value, hpCor$p.value, dispCor$p.value, wtCor$p.value),
+    row.names = c("Carburator barrels", "Quarter mile", "Horsepower",  "Displacement", "Weight"))
+names(cors) <- c("rho", "p-value")
+
+# Print table of correlations
+options(xtable.comment = FALSE)
+print(xtable(cors, caption = "Spearman\'s rho correlations with trans type", digits = -3),
+      type = "latex",
+      booktabs = TRUE,
+      caption.placement = 'top',
+      math.style.exponents = TRUE)
+```
+
+Note that number of carburator barrels, quarter mile time, and horsepower are low correlation variables that could screen off the economy/non-economy confounder described above on preliminary visual examination. See figure 1 in $\S$ Appendix.
+
+```{r correlationModel}
+s1 <- ggplot(mtcars, aes(x=qsec, y=mpg)) +
+    geom_smooth(method = "lm") +
+    geom_point(aes(colour=trans)) +
+    xlab("quarter mile (secs)")
+s2 <- ggplot(mtcars, aes(x=disp, y=mpg)) + 
+    geom_point(aes(colour=trans)) +
+    geom_smooth(method = "lm") +
+    xlab("displacement (cu. in.)")
+s3 <- ggplot(mtcars, aes(x=hp, y=mpg)) + 
+    geom_point(aes(colour=trans)) +
+    geom_smooth(method = "lm") +
+    xlab("horsepower")
+s4 <- ggplot(mtcars, aes(x=wt, y=mpg)) + 
+    geom_point(aes(colour=trans)) +
+    geom_smooth(method = "lm") +
+    xlab("weight (tons)")
+s5 <- ggplot(mtcars, aes(x=cyls, y=mpg, color = trans)) + 
+    geom_boxplot() +
+    geom_point() +
+    xlab("number of cylinders")
+s6 <- ggplot(mtcars, aes(x=carb, y=mpg, color = trans)) + 
+    geom_boxplot() +
+    geom_point() +
+    xlab("carburator")
+s7 <- ggplot(mtcars, aes(x=gear, y=mpg, color = trans)) + 
+    geom_boxplot() +
+    geom_point() +
+    xlab("no. of gears")
+```
+
+
+```{r exploratory1}
+require(grid)
+# Look at differences in transmission alone
+
+e1 <- ggplot(mtcars, aes(mpg, color = trans)) +
+    geom_density() +
+    ggtitle("Density of mpg (by trans type)")
+
+
+# look at differences in transmission and carburator barrels
+e2 <- ggplot(mtcars, aes(x=trans, y=mpg, color = as.factor(carb))) + 
+    geom_boxplot() +
+    geom_point() +
+    xlab("transmission") +
+    labs(color="Carb") 
+
+
+# Since qsec is downstream of hp, disp, cyls, etc., we take a look at how it might explain mpg
+e3 <- ggplot(mtcars, aes(x=trans, y=mpg, color = qsec)) + 
+    geom_boxplot() +
+    geom_point() +
+    xlab("transmission") +
+    ggtitle("Mpg vs. trans type (with q. mile in secs)")
+```
+
+# Modeling
+Preliminary examination of the relationship between mpg and transmission type suggests a relationship at $\alpha = .005$, with manual transmission predicting better mileage:
+
+```{r prelimTTest, echo = TRUE, include=TRUE}
+t.test(mpg ~ trans, data = mtcars, conf.level = .99)
+```
+
+In order to assess possible confounders, we construct a linear model and extend it, first by adding quarter mile time, then number of carburator barrels. The three (nested) linear regression models are as follows:
+
+1. mpg as predicted by transmission type alone;
+2. mpg as predicted by transmission type and quarter mile time;
+3. mpg as predicted by transmission type, quarter mile time, and number of carburator barrels.
+
+Finally an extended model to test for confounding of the relationship between transmission type and mpg is constructed using weight as possible confounder.
+
+### mpg = f(transmission)
+```{r lms1, include=TRUE}
+lm1v <- lm(mpg ~ trans, data=mtcars)
+summary(lm1v)$coefficients
+lm2v <- lm(mpg ~ trans + qsec, data=mtcars)
+```
+### mpg = f(transmission, q.mile (qsec), carb)
+```{r lms3, include=TRUE}
+lm3v <- lm(mpg ~ trans + qsec + carb, data=mtcars)
+summary(lm3v)$coefficients
+```
+### mpg = f(transmission, weight)
+```{r lms4, include=TRUE}
+lmConfound <- lm(mpg ~ trans + wt, data=mtcars)
+summary(lmConfound)$coefficients
+```
+
+The nested model suggests that manual transmissions are better for fuel efficeny in mpg than manual ones. On the other hand, the correlated confounder model suggests that weight screens off the effect of transmission on mpg rating, but that model risks violating the assumptions of regression (see diagnostics below).
+
+## Diagnostics
+Issues to examine for sucessful linear regression are:
+
+1. that the relationship be approximately linear/the influence of outliers is minimal;
+2. multivariate normality of the residuals;
+3. no or little multicollinearity/variance inflation;
+4. No auto-correlation;
+5. homoscedasticity.
+
+
+### 1. Outliers
+The cook's distances are all less than 1, so outliers are not a substantial problem. For example, the cooks distance for the final model is `0.135`.
+```{r outliers}
+max(cooks.distance(lm3v))
+```
+
+### 2. multivariate normality
+In order to see if the linear regression modeling assumptions are met, I looked at Q-Q plots to check for normality, and a plot of residuals vs. predictions to check for independance/constant variance. See Figure 2 of the Appendix. The plot looks fairly normal for the best model, but might violate it for the confounding model.
+
+This is also borne out by a Shapiro-Wilks test with null = normality, which provides weak evidence for normality of residuals in the best model.
+```{r shapiroTest, include=TRUE}
+shapiro.test(residuals(lm(mpg ~ trans + qsec + carb, data=mtcars)))
+
+shapiro.test(residuals(lm(mpg ~ trans + wt, data=mtcars)))
+```
+
+
+### 3. No auto-correlation 
+Checks for indepenence of residuals using the Durbin Watson test reveal little auto-correlation.
+
+```{r durwatTest, include=TRUE}
+library(car)
+durbinWatsonTest(lm3v)
+durbinWatsonTest(lmConfound)
+```
+
+### 4. multicolinearity and variance inflation
+In addition to the correlation checks performed when narrowing in on the models considered above, we also checked the models' variance inflation factors:
+
+```{r vifCheck, include=TRUE, results="asis"}
+# Make vif data frame to print
+vifs <- data.frame(as.character(round(vif(lm2v)[1],3)),as.character(round(vif(lm2v)[2], 3)), "", "", stringsAsFactors=FALSE)
+names(vifs) <- c("trans", "q.mile", "carb","weight")
+vifs <- rbind(vifs, c(as.character(round(vif(lm3v)[1],3)),
+                      as.character(round(vif(lm3v)[2],3)),
+                      as.character(round(vif(lm3v)[3],3)),
+                      ""))
+vifs <- rbind(vifs, c(
+    as.character(round(vif(lmConfound)[1],3)), 
+              "", "",
+     as.character(round(vif(lmConfound)[2],3))))
+row.names(vifs) <- c("mpg = f(trans, 1/4 mile)",
+                    "mpg = f(trans, 1/4 mile, carb)",
+                    "mpg = f(trans, weight)")
+
+# Print table of vifs
+options(xtable.comment = FALSE)
+print(xtable(vifs, caption = "Varience inflation factors"),
+      type = "latex",
+      booktabs = TRUE,
+      caption.placement = 'top',
+      math.style.exponents = TRUE)
+```
+
+While the VIFs are not particularly large there is a worry that the three variable model inflates the varience too much. Still, it is worth noting that the choice of quarter mile time and carburator barrels make up a triad of variables with lower overall VIFs.
+
+### 5. homoscedasticity
+Checked by a plot of residuals vs. fitted values in the diagnositics section of the Appendix.
+
+## Anova
+Since the diagnostic Q-Q plots suggest that the studentized residuals are approximately normal for the nested models, we proceed with an anova analysis to assess whether or not the extensions help prediction:
+```{r anovaNested, include=TRUE}
+anova(lm1v, lm2v, lm3v)
+```
+
+The results of the anova analysis suggest that each extension of the model captures an important aspect of prediction compared to the previous at $\alpha = .01$. 
+
+Likewise, the anova for the confounding model suggests that each variable is predictive (though in this case the normality assumption is more questionable). In this case the p-value for the added predictive power of weight beyond transmission type is `1.867e-07`.
+```{r anovaConfounding}
+anova(lm1v, lmConfound)
+```
+
+# Appendix
+## Figure 1: Exploratory analyses
+```{r explorFigs1 , fig.height=8, include=TRUE}
+
+grid.arrange(e1, e2, e3,
+             ncol=1)
+
+# grid.arrange(s1, s3, s4, s2, s6, s7, ncol=2,
+#              top=textGrob("1.1 regressor correlation", gp=gpar(fontsize=15,font=8)))
+```
+
+
+
+## Figure 2: Diagnostics
+```{r diagPlot}
+d1 <- ggplot(data.frame(residuals = resid(lm3v), predictions = predict(lm3v)), 
+       aes(y = residuals, x = predictions)) +
+    geom_point(alpha = 0.5) +
+    ggtitle("Residuals vs predictions")
+
+y <- quantile(lm3v$resid[!is.na(lm3v$resid)], c(0.25, 0.75))
+x <- qnorm(c(0.25, 0.75))
+slope <- diff(y)/diff(x)
+int <- y[1L] - slope * x[1L]
+d2 <- ggplot(lm3v, aes(sample=.resid)) +
+        stat_qq(alpha = 0.5) +
+        geom_abline(slope = slope, intercept = int, color="blue") +
+    ggtitle("Normal Q-Q plot")
+
+d3 <- ggplot(data.frame(residuals = resid(lmConfound), predictions = predict(lmConfound)), 
+       aes(y = residuals, x = predictions)) +
+    geom_point(alpha = 0.5) +
+    ggtitle("Residuals vs predictions")
+
+y <- quantile(lmConfound$resid[!is.na(lmConfound$resid)], c(0.25, 0.75))
+x <- qnorm(c(0.25, 0.75))
+slope <- diff(y)/diff(x)
+int <- y[1L] - slope * x[1L]
+d4 <- ggplot(lm3v, aes(sample=.resid)) +
+        stat_qq(alpha = 0.5) +
+        geom_abline(slope = slope, intercept = int, color="blue") +
+    ggtitle("Normal Q-Q plot: confounder model")
+```
+
+```{r diagPlot2, fig.height=3.75, include=TRUE}
+grid.arrange(d1, d2, ncol=2,
+             top=textGrob("Best model dignostics for homoscedasticity and normality", gp=gpar(fontsize=15,font=8)))
+```
+
+\vspace{1cm}
+
+```{r diagPlot3, fig.height=3.75, include=TRUE}
+grid.arrange(d3, d4, ncol=2,
+             top=textGrob("Confounding model dignostics for homoscedasticity and normality", gp=gpar(fontsize=15,font=8)))
+```
+
