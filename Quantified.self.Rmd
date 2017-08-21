@@ -71,7 +71,7 @@ forMod <- train(classe~., data=train, method="rf",
 
 
 ## Summary of results
-Of the models explored, the best model had an in training set 10-fold cross-validation error rate of 0.7% (accuracy of 99.3%) using random samples of 2 variables (`mtry=2`). The error in the hold-out set is (surprisingly) higher still at 99.6% and offers a good prediction of out of sample accuracy.
+Of the models explored, the best model had an in training set 10-fold cross-validation error rate of 0.7% (accuracy of 99.3%) using random samples of 2 variables (`mtry=2`). The accuracy in the hold-out set is (surprisingly) higher still at 99.6% and offers a good prediction of out of sample accuracy.
 
 ```{r testPred}
 # Print details from the model training
