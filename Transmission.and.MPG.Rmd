@@ -162,7 +162,7 @@ lmConfound <- lm(mpg ~ trans + wt, data=mtcars)
 summary(lmConfound)$coefficients
 ```
 
-The nested model suggests that manual transmissions are better for fuel efficeny in mpg than manual ones. On the other hand, the correlated confounder model suggests that weight screens off the effect of transmission on mpg rating, but that model risks violating the assumptions of regression (see diagnostics below).
+The nested model suggests that manual transmissions are better for fuel efficeny in mpg than automatic ones. On the other hand, the correlated confounder model suggests that weight screens off the effect of transmission on mpg rating, but that model risks violating the assumptions of regression (see diagnostics below).
 
 ## Diagnostics
 Issues to examine for sucessful linear regression are:
@@ -241,7 +241,7 @@ anova(lm1v, lm2v, lm3v)
 
 The results of the anova analysis suggest that each extension of the model captures an important aspect of prediction compared to the previous at $\alpha = .01$. 
 
-Likewise, the anova for the confounding model suggests that each variable is predictive (though in this case the normality assumption is more questionable). In this case the p-value for the added predictive power of weight beyond transmission type is `1.867e-07`.
+Likewise, the anova for the confounding model suggests that each variable is predictive (though in this case the normality assumption is more questionable). In this case, the p-value for the added predictive power of weight beyond transmission type is `1.867e-07`.
 ```{r anovaConfounding}
 anova(lm1v, lmConfound)
 ```
@@ -287,7 +287,7 @@ int <- y[1L] - slope * x[1L]
 d4 <- ggplot(lm3v, aes(sample=.resid)) +
         stat_qq(alpha = 0.5) +
         geom_abline(slope = slope, intercept = int, color="blue") +
-    ggtitle("Normal Q-Q plot: confounder model")
+    ggtitle("Normal Q-Q plot (confounders)")
 ```
 
 ```{r diagPlot2, fig.height=3.75, include=TRUE}
