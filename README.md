@@ -17,14 +17,14 @@ This repository contains some examples of data analyses that I have performed  t
 
 ## Dashboarding
 ### Market comparables app
-- This Shiny dashboard/web app, written in R, can be found at: [https://jdallmann.shinyapps.io/comparablesapp/](https://jdallmann.shinyapps.io/comparablesapp/).
-- The proof of concept app performs k-means clustering on two months of Winnipeg real estate data on different features of properties including:
+- This "proof of concept" Shiny dashboard/web app, written in R, can be found at: [https://jdallmann.shinyapps.io/comparablesapp/](https://jdallmann.shinyapps.io/comparablesapp/).
+- The app performs k-means clustering on two months of Winnipeg real estate data on different features of properties including:
     + latitude,
     + longitude,
     + living area,
     + year,
     + frontage,
     + whether the property has a garage.
-- The original data was scrapped from the web, cleaned, imputed using k-nearest neighbors (k=2), and normalized before clustering. Code (in the form of bash and python scripts) available on request.
-- Code for this app can be found in [this](https://github.com/jdallmann/market.analysis/tree/master/comparablesApp) github repository.
+- The original data was scrapped from the web, cleaned, imputed using k-nearest neighbors (k=2), and normalized before clustering. Code for the gathering and scraping process (in the form of bash and python scripts) are available on request.
+- The github code repository for the app can be found [here](https://github.com/jdallmann/market.analysis/tree/master/comparablesApp).
 - Code for a "deep learning" neural network based prediction algorithm with accuracy comparable to that of a real estate agent (agents are off by 10k on average, the app is off by 15k on average) is also available on request.
