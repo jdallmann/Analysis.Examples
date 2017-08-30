@@ -41,7 +41,7 @@ data <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-traini
 
 
 # Cleaning the data
-In building the final model I remove remove time and date information, and summary statistic variables for each measurement window (to ensure that the window identifier information is not used in prediction). The data is then randomly separated into a training set (80% of data) upon which to perform 10-fold cross-validation model selection and a hold out set (20% of data) to estimate out of sample error.
+In building the final model I remove time and date information, and summary statistic variables for each measurement window (to ensure that the window identifier information is not used in prediction). The data is then randomly separated into a training set (80% of data) upon which to perform 10-fold cross-validation model selection and a hold out set (20% of data) to estimate out of sample error.
 
 ```{r cleanData}
 # Get rid of date-time info, window information, and subject identifiers
@@ -136,7 +136,7 @@ confusionMatrix(treeModPreds, test$classe)
 ```
 
 ## Gradient boosting
-Boosting with trees (gradient boosting machine) has a best model out of sample accuracy rate ~96%. The final values used for the model were n.trees = 150, interaction.depth = 3, shrinkage = 0.1 and n.minobsinnode = 10. No further tuning of shrinkage for the model was performed.
+Boosting with trees (gradient boosting machines) has a best model out of sample accuracy rate of ~96%. The final values used for the model were n.trees = 150, interaction.depth = 3, shrinkage = 0.1 and n.minobsinnode = 10. No further tuning of shrinkage for the model was performed.
 ```{r boostModel}
 ## train gbm
 # 
@@ -167,5 +167,5 @@ If greater accuracy were required, there are a couple of further approaches that
 1. Tune the random forest model more systematically for other numbers of variables sampled  (other values of `mtry`).
 2. Generating further features, including the summary statistics that were originally removed from the data set for the analysis. Costs of this approach include increasing computational time, increasing the chances of over-fitting.
 3. Including time-length of activity information. Costs of this approach include increasing computational time, and potentially adding spurious correlations across  measurements. Following this approach it would also be important to measure time **from the begining of each exercise window**---since if the full timestamp were used, knowledge of which time slice the action is being performed in would provide illicit near perfect information regarding the class of exercise being undertaken. 
-4. Adding within-subject estimation of quality of action. Costs of this approach include increasing computational time and reducing availability (since measurements for each new individual would be needed to calibrate the model).
+4. Adding within-subject estimation of quality of action. Costs of this approach include increasing computational time and reducing scalability (since measurements for each new individual would be needed to calibrate the model).
 5. Trying different methods like logistic regression, neural network predictors, or some predictor that aggregates the above approaches. This option would most increase analysis time and computational time, though would probably secure the greatest gains especially if combined with the above suggestions.
