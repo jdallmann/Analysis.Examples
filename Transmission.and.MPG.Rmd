@@ -32,11 +32,11 @@ mtcars <- mutate(mtcars,
 ```
 
 # Executive summary---a tale of two models
-In this analysis, we examine 1974 *Motor Trend* data to establish whether transmission type has an effect on fuel milage. Due to the sample size and nature of the data, no (reliable) conclusion can be drawn about the relationship of transmission type to mpg. In particular, the natural strategy of using a linear model is difficult to justify (most of the variables are strongly correlated and the residuals of the models that they give rise to have non-normal residuals).
+In this analysis, we examine 1974 *Motor Trend* data to establish whether transmission type has an effect on fuel milage. Due to the sample size and nature of the data, no (reliable) conclusion can be drawn about the relationship of transmission type to mpg. In particular, though the simplest tests and models suggest that manual transmissions are better for mileage, models containing confounders for the relationship cannot be ruled out.
 
-In what follows, I present the model that best meets the constraints of linear regression given the data. The best model takes mpg to be dependant on transmission type (*trans*), quarter mile time in seconds (*q.mile*), and number of carburator barrels (*carb*). This model suggests that a manual transmission is better for mpg. *However*, I also show the effects of weight as a possible confounder diminishing our confidence in the model.
+In what follows, I test the relationship between mpg and transmission type with a T test. Then, in order to better understand the relationship, I investigate the model that best meets the constraints of linear regression given the data. This best model takes mpg to be dependant on transmission type (*trans*), quarter mile time in seconds (*q.mile*), and number of carburator barrels (*carb*). It suggests that a manual transmission is better for mpg. *However*, I also show the effects of weight as a possible confounder diminishing our confidence in the model.
 
-**Given the nature of the data, we cannot be confident that mpg is predicted by transmission type (and, thus, we cannot place much weight on our best model's conclusion that with all of the other variables fixed, switching from automatic transmission to manual yeilds an `8.435` increase in mpg).**
+**Thus, given the nature of the data, we cannot be confident that mpg is predicted by transmission type (and, thus, we cannot place much weight on our best model's conclusion that with all of the other variables fixed, switching from automatic transmission to manual yeilds an `8.435` increase in mpg).**
 
 
 # Exploratory work
